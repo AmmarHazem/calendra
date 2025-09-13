@@ -1,25 +1,17 @@
-import { initializeApp } from "firebase/app";
-import { getAuth, getRedirectResult, GoogleAuthProvider, signInWithRedirect } from "firebase/auth";
-import { FC, useCallback, useEffect } from "react";
+import { getRedirectResult, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { FC, useCallback, useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
+import { fireAuth, googleProvider } from "@/lib/firebaseConfig";
+import useFireAuthState from "@/hooks/useFireAuthState";
 
 const GoogleSignInButton: FC = () => {
-  useEffect(() => {
-    initializeApp({
-      apiKey: "AIzaSyBxN-KR4idez99_NcdbvImVUavkx-yegRE",
-      authDomain: "calendra-4eb94.firebaseapp.com",
-      projectId: "calendra-4eb94",
-      storageBucket: "calendra-4eb94.firebasestorage.app",
-      messagingSenderId: "600396470230",
-      appId: "1:600396470230:web:becc3f9ec4a73f99637677",
-    });
-  }, []);
+  const [signoutLoading, setSignoutLoading] = useState(false);
+  const [signinLoading, setSigninLoading] = useState(false);
 
   useEffect(() => {
     const handleAuthRedirect = async () => {
-      const auth = getAuth();
-      const result = await getRedirectResult(auth);
+      const result = await getRedirectResult(fireAuth);
       console.log("result", result);
       if (!result?.user) {
         console.log("no auth result");
@@ -36,17 +28,55 @@ const GoogleSignInButton: FC = () => {
     handleAuthRedirect();
   }, []);
 
+  const { user } = useFireAuthState();
+
   const onClick = useCallback(async () => {
-    const auth = getAuth();
-    auth.useDeviceLanguage();
-    const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider);
+    setSigninLoading(true);
+    try {
+      fireAuth.useDeviceLanguage();
+      // await signInWithRedirect(fireAuth, provider);
+      const result = await signInWithPopup(fireAuth, googleProvider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const token = credential?.accessToken;
+      const user = result.user;
+      console.log("auth result", result, credential, token, user);
+    } catch (e) {
+      console.log("--- google sign in error", e);
+      toast.error("could not login", { position: "top-center" });
+    } finally {
+      setSigninLoading(false);
+    }
   }, []);
 
+  const handleSignout = useCallback(async () => {
+    setSignoutLoading(true);
+    try {
+      await signOut(fireAuth);
+    } catch (e) {
+      console.log("--- handleSignout error", e);
+    } finally {
+      setSignoutLoading(false);
+    }
+  }, []);
+
+  if (user) {
+    return (
+      <Button className="w-full" variant="destructive" disabled={signoutLoading} onClick={handleSignout}>
+        {signoutLoading ? "Loading..." : `Sign out`}
+      </Button>
+    );
+  }
+
   return (
-    <Button onClick={onClick} variant="outline" className="w-full">
-      Login with Google
-    </Button>
+    <>
+      <Button disabled={signinLoading} onClick={onClick} variant="outline" className="w-full">
+        {signinLoading ? "Loading..." : "Login with Google (Popup)"}
+      </Button>
+      <div className="h-[1px] w-full bg-neutral-200" />
+      <Button disabled={signinLoading} onClick={onClick} variant="outline" className="w-full">
+        {signinLoading ? "Loading..." : "Login with Google (Redirect)"}
+      </Button>
+    </>
   );
 };
 
