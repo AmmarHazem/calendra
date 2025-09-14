@@ -1,13 +1,15 @@
-import { getRedirectResult, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { getRedirectResult, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { FC, useCallback, useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { fireAuth, googleProvider } from "@/lib/firebaseConfig";
 import useFireAuthState from "@/hooks/useFireAuthState";
+import LogoutButton from "./LogoutButton";
+import { useRouter } from "next/navigation";
 
 const GoogleSignInButton: FC = () => {
-  const [signoutLoading, setSignoutLoading] = useState(false);
   const [signinLoading, setSigninLoading] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const handleAuthRedirect = async () => {
@@ -40,31 +42,17 @@ const GoogleSignInButton: FC = () => {
       const token = credential?.accessToken;
       const user = result.user;
       console.log("auth result", result, credential, token, user);
+      router.replace("/");
     } catch (e) {
       console.log("--- google sign in error", e);
       toast.error("could not login", { position: "top-center" });
     } finally {
       setSigninLoading(false);
     }
-  }, []);
-
-  const handleSignout = useCallback(async () => {
-    setSignoutLoading(true);
-    try {
-      await signOut(fireAuth);
-    } catch (e) {
-      console.log("--- handleSignout error", e);
-    } finally {
-      setSignoutLoading(false);
-    }
-  }, []);
+  }, [router]);
 
   if (user) {
-    return (
-      <Button className="w-full" variant="destructive" disabled={signoutLoading} onClick={handleSignout}>
-        {signoutLoading ? "Loading..." : `Sign out`}
-      </Button>
-    );
+    return <LogoutButton />;
   }
 
   return (
