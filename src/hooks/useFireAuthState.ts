@@ -7,12 +7,11 @@ export default function useFireAuthState() {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const unsubscripe = onAuthStateChanged(fireAuth, (user) => {
+    const unsubscripe = onAuthStateChanged(fireAuth, async (user) => {
       console.log("--- onAuthStateChanged", user);
       setUser(user);
-      if (user?.uid) {
-        setAuthToken(user.uid);
-      }
+      const token = await user?.getIdToken();
+      setAuthToken(token ?? null);
     });
     return unsubscripe;
   }, []);
