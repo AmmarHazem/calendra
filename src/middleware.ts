@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const authOnlyRoutes: string[] = ["/"];
+const authOnlyRoutes: string[] = [];
 const noAuthOnlyRoutes: string[] = ["/login"];
 
 export async function middleware(request: NextRequest) {
