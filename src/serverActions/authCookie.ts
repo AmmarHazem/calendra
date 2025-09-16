@@ -7,7 +7,7 @@ export async function setAuthToken(token: string | null) {
   if (!token) {
     cookiesStore.delete("auth");
   } else {
-    cookiesStore.set("auth", token);
+    cookiesStore.set("auth", token, { httpOnly: true, secure: true });
   }
 }
 
